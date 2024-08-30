@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request
-from model import BertTextCNNClassifier, PreProcess, num_filters, filter_sizes, output_size
+from model import BertTextCNNClassifier, PreProcess
 from transformers import BertTokenizer, BertModel
 import torch
 
@@ -8,12 +8,16 @@ app = Flask(__name__)
 # set the device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+# Hyperparameters
+num_filters, filter_sizes, output_size = 100, [2, 3, 4], 2
+
 # Load the machine learning model
 bert_model_name = 'bert-base-uncased'
 tokenizer = BertTokenizer.from_pretrained(bert_model_name) # define the tokenizer
 bert_model = BertModel.from_pretrained(bert_model_name)
 model = BertTextCNNClassifier(bert_model, num_filters, filter_sizes, output_size)
 model.load_state_dict(torch.load('artifact/bert_textcnn_classifier.pth'))
+model.to(device)
 model.eval()
 
 @app.route('/')
@@ -32,13 +36,23 @@ def predict():
     input_preprocessed = preprocessor.tokenize_sql(input_preprocessed)
 
     # Tokenize the input
-    # TODO: Tokenize the input using the tokenizer
+    encoding = tokenizer(
+        input_preprocessed,
+        truncation=True,
+        padding='max_length',
+        max_length=128,  # Using the same max_length as in training
+        return_tensors='pt'
+    )
+
+    input_ids = encoding['input_ids'].to(device)
+    attention_mask = encoding['attention_mask'].to(device)
 
     # Classify the input
-    # TODO: Classify the input using the model
+    with torch.no_grad():
+        logits = model(input_ids, attention_mask)
+        prediction = torch.argmax(logits, dim=1).item()
 
     # Return the prediction
-    prediction = 1 # 1 is SQL Injection, 0 is No SQL Injection
     prediction = 'SQL Injection' if prediction == 1 else 'No SQL Injection'
 
     return render_template('result.html', prediction=prediction)
