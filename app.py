@@ -1,15 +1,23 @@
 from flask import Flask, render_template, request
-from transformers import MobileBertTokenizer, MobileBertForSequenceClassification
+from model import BertTextCNNClassifier, PreProcess
+from transformers import BertTokenizer, BertModel
 import torch
-# import joblib
 
 app = Flask(__name__)
 
-# Load the machine learning model
+# set the device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-tokenizer = MobileBertTokenizer.from_pretrained('google/mobilebert-uncased')
-# tokenizer.decode(clean_up_tokenization_spaces=True)
-model = MobileBertForSequenceClassification.from_pretrained('cssupport/mobilebert-sql-injection-detect').to(device)
+
+# Hyperparameters
+num_filters, filter_sizes, output_size = 100, [2, 3, 4], 2
+
+# Load the machine learning model
+bert_model_name = 'bert-base-uncased'
+tokenizer = BertTokenizer.from_pretrained(bert_model_name) # define the tokenizer
+bert_model = BertModel.from_pretrained(bert_model_name)
+model = BertTextCNNClassifier(bert_model, num_filters, filter_sizes, output_size)
+model.load_state_dict(torch.load('artifact/bert_textcnn_classifier.pth'))
+model.to(device)
 model.eval()
 
 @app.route('/')
@@ -18,23 +26,39 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    text = request.form['input1']
-    # text = "curl -s -X POST https://api.magalu.cloud/compute/v0/instances -H 'Content-Type:application/json' -d 'description': '1\/%\/27%20ORDER%20BY%203--%2B'"
-    inputs = tokenizer(text, padding=False, truncation=True, return_tensors='pt', max_length=512)
-    input_ids = inputs['input_ids'].to(device)
-    attention_mask = inputs['attention_mask'].to(device)
+    # Receive the input and preprocess it
+    input_text = request.form['input1']
+    preprocessor = PreProcess()
 
+    input_preprocessed = preprocessor.decode_sql(input_text)    
+    input_preprocessed = preprocessor.lowercase_sql(input_preprocessed)
+    input_preprocessed = preprocessor.generalize_sql(input_preprocessed)
+    input_preprocessed = preprocessor.tokenize_sql(input_preprocessed)
+
+    # Tokenize the input
+    encoding = tokenizer(
+        input_preprocessed,
+        truncation=True,
+        padding='max_length',
+        max_length=128,  # Using the same max_length as in training
+        return_tensors='pt'
+    )
+
+    input_ids = encoding['input_ids'].to(device)
+    attention_mask = encoding['attention_mask'].to(device)
+
+    # Classify the input
     with torch.no_grad():
-        outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+        logits = model(input_ids, attention_mask)
+        prediction = torch.argmax(logits, dim=1).item()
 
-    logits = outputs.logits
-    probabilities = torch.softmax(logits, dim=1)
-    predicted_class = torch.argmax(probabilities, dim=1).item()
-    prediction = "SQL Injection Detected" if predicted_class > 0.7 else "No SQL Injection Detected"
-    confidence = probabilities[0][predicted_class].item()
+    # Return the prediction
+    prediction = 'SQL Injection' if prediction == 1 else 'No SQL Injection'
 
     return render_template('result.html', prediction=prediction)
-    # return render_template('result.html', prediction=prediction)
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+# Tests
+# text = "curl -s -X POST https://api.magalu.cloud/compute/v0/instances -H 'Content-Type:application/json' -d 'description': '1\/%\/27%20ORDER%20BY%203--%2B'"
