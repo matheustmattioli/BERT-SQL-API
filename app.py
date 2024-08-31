@@ -6,7 +6,8 @@ import torch
 app = Flask(__name__)
 
 # set the device
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device_type = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = torch.device(device_type)
 
 # Hyperparameters
 num_filters, filter_sizes, output_size = 100, [2, 3, 4], 2
@@ -16,7 +17,7 @@ bert_model_name = 'bert-base-uncased'
 tokenizer = BertTokenizer.from_pretrained(bert_model_name) # define the tokenizer
 bert_model = BertModel.from_pretrained(bert_model_name)
 model = BertTextCNNClassifier(bert_model, num_filters, filter_sizes, output_size)
-model.load_state_dict(torch.load('artifact/bert_textcnn_classifier.pth'), map_location=device)
+model.load_state_dict(torch.load('artifact/bert_textcnn_classifier.pth'), map_location=torch.device(device_type))
 model.to(device)
 model.eval()
 
