@@ -16,7 +16,7 @@ bert_model_name = 'bert-base-uncased'
 tokenizer = BertTokenizer.from_pretrained(bert_model_name) # define the tokenizer
 bert_model = BertModel.from_pretrained(bert_model_name)
 model = BertTextCNNClassifier(bert_model, num_filters, filter_sizes, output_size)
-model.load_state_dict(torch.load('artifact/bert_textcnn_classifier.pth'))
+model.load_state_dict(torch.load('artifact/bert_textcnn_classifier.pth'), map_location=device)
 model.to(device)
 model.eval()
 
