@@ -60,5 +60,3 @@ def predict():
 if __name__ == '__main__':
     app.run(debug=True)
 
-# Tests
-# text = "curl -s -X POST https://api.magalu.cloud/compute/v0/instances -H 'Content-Type:application/json' -d 'description': '1\/%\/27%20ORDER%20BY%203--%2B'"
