@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 from model import BertTextCNNClassifier, PreProcess
 from transformers import BertTokenizer, BertModel
-import torch
+import torch, os
 
 app = Flask(__name__)
 
@@ -59,5 +59,8 @@ def predict():
     return render_template('result.html', prediction=prediction)
 
 if __name__ == '__main__':
+    host = os.getenv("FLASK_RUN_HOST", "127.0.0.1")
+    port = int(os.getenv("FLASK_RUN_PORT", 5000))
+    app.run(host=host, port=port)
     app.run(debug=True)
 
