@@ -17,15 +17,19 @@ wget -P artifact 'https://drive.google.com/file/d/1m8HPQLToDfvE9tIE_cisuG8qp9b-l
 
 [***Trained model weights available here.***](https://drive.google.com/file/d/1m8HPQLToDfvE9tIE_cisuG8qp9b-lntf).
 
+### Local
+
 Install all the requirements from requirements.txt in local machine
 
 ```
 pip install --no-cache-dir -r requirements.txt
 ```
 
-Or build and run the dockerfile
+and run the application ```python app.py```
+
+### Docker
+Alternatively run the dockerfile
 
 ```
-docker build -t bert-sql-api .
-docker run bert-sql-api 
+docker run -p 5000:5000 gkdogifjhif/bert-sql-api:latest
 ```
