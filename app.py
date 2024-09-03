@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 from model import BertTextCNNClassifier, PreProcess
 from transformers import BertTokenizer, BertModel
-import torch, os
+import torch, os, grpc
 
 app = Flask(__name__)
 
