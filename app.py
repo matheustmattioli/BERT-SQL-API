@@ -1,48 +1,16 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from model import BertTextCNNClassifier, PreProcess
 from transformers import BertTokenizer, BertModel
-import torch, os, grpc, message.predict_pb2, message.predict_pb2_grpc
+from concurrent import futures
+import torch, os, grpc, message.predict_pb2, message.predict_pb2_grpc, threading
 
-class PredictionService(predict_pb2_grpc.PredictionServiceServicer):
+class PredictionService(message.predict_pb2_grpc.PredictionServiceServicer):
     def Predict(self, request, context):
         input1 = request.input1
         result = run_prediction(input1)  # Call your existing prediction function
-        return predict_pb2.PredictResponse(result=result)
+        return message.predict_pb2.PredictResponse(result=result)
 
-
-def serve_grpc():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    predict_pb2_grpc.add_PredictionServiceServicer_to_server(PredictionService(), server)
-    server.add_insecure_port('[::]:50051')
-    server.start()
-    server.wait_for_termination()
-
-
-
-app = Flask(__name__)
-
-# set the device
-device_type = 'cuda' if torch.cuda.is_available() else 'cpu'
-device = torch.device(device_type)
-
-# Hyperparameters
-num_filters, filter_sizes, output_size = 100, [2, 3, 4], 2
-
-# Load the machine learning model
-bert_model_name = 'bert-base-uncased'
-tokenizer = BertTokenizer.from_pretrained(bert_model_name) # define the tokenizer
-bert_model = BertModel.from_pretrained(bert_model_name)
-model = BertTextCNNClassifier(bert_model, num_filters, filter_sizes, output_size)
-model.load_state_dict(torch.load('artifact/bert_textcnn_classifier.pth', map_location=torch.device(device_type)))
-model.to(device)
-model.eval()
-
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-@app.route('/predict', methods=['POST'])
-def predict():
+def run_prediction(input1):
     # Receive the input and preprocess it
     input_text = request.form['input1']
     preprocessor = PreProcess()
@@ -72,9 +40,47 @@ def predict():
     # Return the prediction
     prediction = 'SQL Injection' if prediction == 1 else 'No SQL Injection'
 
-    return render_template('result.html', prediction=prediction)
+    return prediction
+
+def serve_grpc():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    message.predict_pb2_grpc.add_PredictionServiceServicer_to_server(PredictionService(), server)
+    server.add_insecure_port('[::]:50051')
+    server.start()
+    server.wait_for_termination()
+
+app = Flask(__name__)
+
+# set the device
+device_type = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = torch.device(device_type)
+
+# Hyperparameters
+num_filters, filter_sizes, output_size = 100, [2, 3, 4], 2
+
+# Load the machine learning model
+bert_model_name = 'bert-base-uncased'
+tokenizer = BertTokenizer.from_pretrained(bert_model_name) # define the tokenizer
+bert_model = BertModel.from_pretrained(bert_model_name)
+model = BertTextCNNClassifier(bert_model, num_filters, filter_sizes, output_size)
+model.load_state_dict(torch.load('artifact/bert_textcnn_classifier.pth', map_location=torch.device(device_type)))
+model.to(device)
+model.eval()
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    data = request.json 
+    input - data.get('input1')
+    prediction = run_prediction(input)
+    return jsonify(prediction)
+    # return render_template('result.html', prediction=prediction)
 
 if __name__ == '__main__':
+    threading.Thread(target=serve_grpc).start()
     host = os.getenv("FLASK_RUN_HOST", "127.0.0.1")
     port = int(os.getenv("FLASK_RUN_PORT", 5000))
     app.run(host=host, port=port)
