@@ -1,7 +1,23 @@
 from flask import Flask, render_template, request
 from model import BertTextCNNClassifier, PreProcess
 from transformers import BertTokenizer, BertModel
-import torch, os, grpc
+import torch, os, grpc, message.predict_pb2, message.predict_pb2_grpc
+
+class PredictionService(predict_pb2_grpc.PredictionServiceServicer):
+    def Predict(self, request, context):
+        input1 = request.input1
+        result = run_prediction(input1)  # Call your existing prediction function
+        return predict_pb2.PredictResponse(result=result)
+
+
+def serve_grpc():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    predict_pb2_grpc.add_PredictionServiceServicer_to_server(PredictionService(), server)
+    server.add_insecure_port('[::]:50051')
+    server.start()
+    server.wait_for_termination()
+
+
 
 app = Flask(__name__)
 
