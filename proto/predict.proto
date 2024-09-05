@@ -7,7 +7,7 @@ service PredictionService {
 }
 
 message PredictRequest {
-    string input1 = 1;
+    string input = 1;
 }
 
 message PredictResponse {
