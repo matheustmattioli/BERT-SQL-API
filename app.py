@@ -6,11 +6,17 @@ app = Flask(__name__)
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    data = request.get_json()
+    if data is None:
+        return jsonify({"message": "Bad Request: No JSON data received"}), 400
+    input_text = data.get('input')
+    if not input_text:
+        return jsonify({"message": "Bad Request: 'input' field is required"}), 400
     try:
         # make gRPC call
         with grpc.insecure_channel('localhost:50051') as channel:
             stub = server.predict_pb2_grpc.PredictionServiceStub(channel)
-            response = stub.Predict(server.predict_pb2.PredictRequest(input=request.form['input']))
+            response = stub.Predict(server.predict_pb2.PredictRequest(input=input_text))
         # process gRPC response and return to the Flask app
         prediction = {'result': response.result}
         return jsonify(prediction)
