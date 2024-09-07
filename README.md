@@ -31,7 +31,7 @@ and run the application ```python app.py``` and the grpc service ```python predi
 Alternatively run the dockerfile
 
 ```
-docker run -p 5000:5000 -p 50051:50051 bert-sql-api
+docker run -p 5000:5000 -p 50051:50051 gkdogifjhif/bert-sql-api
 ```
 
 ### Call Example
