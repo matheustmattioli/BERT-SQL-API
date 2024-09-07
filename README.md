@@ -25,11 +25,22 @@ Install all the requirements from requirements.txt in local machine
 pip install --no-cache-dir -r requirements.txt
 ```
 
-and run the application ```python app.py```
+and run the application ```python app.py``` and the grpc service ```python predict_server.py```
 
 ### Docker
 Alternatively run the dockerfile
 
 ```
-docker run -p 5000:5000 gkdogifjhif/bert-sql-api:latest
+docker run -p 5000:5000 -p 50051:50051 bert-sql-api
 ```
+
+### Call Example
+
+An example of using is 
+
+```
+curl -X POST http://localhost:5000/predict \
+-H "Content-Type: application/json" \
+-d '{"input1": "\' DELETE 1=1"}'
+```
+
