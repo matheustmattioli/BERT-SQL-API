@@ -114,7 +114,7 @@ class BertTextCNNClassifier(nn.Module):
 
 if __name__ == '__main__':
     # Opendataset
-    df = pd.read_csv("data/Modified_SQL_Dataset.csv").sample(10000).reset_index(drop=True)
+    df = pd.read_csv("../data/Modified_SQL_Dataset.csv").sample(10000).reset_index(drop=True)
     
     # Preprocess
     preprocess = PreProcess()
@@ -180,7 +180,7 @@ if __name__ == '__main__':
                 t.set_postfix({'loss': total_loss / (t.n + 1), 'accuracy': correct_train / total_train})
 
     # Save the model
-    torch.save(model.state_dict(), 'artifact/bert_textcnn_classifier.pth')
+    torch.save(model.state_dict(), '../artifact/bert_textcnn_classifier.pth')
 
     # Test the model
     model.eval()
