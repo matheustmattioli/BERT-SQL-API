@@ -18,7 +18,10 @@ def predict():
             stub = server.predict_pb2_grpc.PredictionServiceStub(channel)
             response = stub.Predict(server.predict_pb2.PredictRequest(input=input_text))
         # process gRPC response and return to the Flask app
-        prediction = {'result': response.result}
+        prediction = {
+            'is_attack': True if response.result == 'SQL Injection' else False,
+            'type_attack':  response.result 
+        }
         return jsonify(prediction)
     except Exception as e:
         return jsonify({'message': f"Error: {e}"})
