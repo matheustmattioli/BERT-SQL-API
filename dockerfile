@@ -4,6 +4,8 @@ WORKDIR /app-model
 
 COPY ./requirements.txt /app-model/requirements.txt
 
+RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app-model/
 RUN chmod +x /app-model/run.sh
