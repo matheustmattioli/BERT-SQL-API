@@ -7,7 +7,7 @@ app = Flask(__name__)
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.get_json()
-    inputs = [value for key, value in data.items() if key.startswith('input')]
+    inputs = [value for key, value in data.items()]
     if data is None:
         return jsonify({"message": "Bad Request: No JSON data received"}), 400
     if not inputs:
