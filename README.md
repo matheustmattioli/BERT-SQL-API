@@ -44,3 +44,10 @@ curl -X POST http://localhost:5000/predict \
 -d '{"input1": "\' DELETE 1=1"}'
 ```
 
+Or passing more than one key
+
+```
+curl -X POST http://localhost:5000/predict \
+-H "Content-Type: application/json" \
+-d '{"campo1": "DELETE 1=1","campo2": "SELECT * FROM users WHERE id = 1","input": "1 UNION SELECT 1, version() limit 1,1"}'
+```
