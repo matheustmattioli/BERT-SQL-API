@@ -6,10 +6,9 @@ from model.prediction import run_prediction
 
 class PredictionService(server.predict_pb2_grpc.PredictionServiceServicer):
     def Predict(self, request, context):
-        # receive the request input (json) and run the prediction
-        input = request.input
-        result = run_prediction(input)
-        return server.predict_pb2.PredictResponse(result=result)
+        # receive the request input and run the prediction
+        results = [run_prediction(input) for input in request.input]
+        return server.predict_pb2.PredictResponse(result=results)
 
 def serve():
     grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

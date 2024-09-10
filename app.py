@@ -7,22 +7,25 @@ app = Flask(__name__)
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.get_json()
+    inputs = [value for key, value in data.items() if key.startswith('input')]
     if data is None:
         return jsonify({"message": "Bad Request: No JSON data received"}), 400
-    input_text = data.get('input')
-    if not input_text:
+    if not inputs:
         return jsonify({"message": "Bad Request: 'input' field is required"}), 400
     try:
         # make gRPC call
         with grpc.insecure_channel('localhost:50051') as channel:
             stub = server.predict_pb2_grpc.PredictionServiceStub(channel)
-            response = stub.Predict(server.predict_pb2.PredictRequest(input=input_text))
+            response = stub.Predict(server.predict_pb2.PredictRequest(input=inputs))
         # process gRPC response and return to the Flask app
-        prediction = {
-            'is_attack': True if response.result == 'SQL Injection' else False,
-            'type_attack':  response.result 
+        predictions = {
+            f'result_{i}': {
+                'is_attack': True if result == 'SQL Injection' else False,
+                'type_attack':  result if result == 'SQL Injection' else 'No Threat'
+            }
+            for i, result in enumerate(response.result)
         }
-        return jsonify(prediction)
+        return jsonify(predictions)
     except Exception as e:
         return jsonify({'message': f"Error: {e}"})
 
