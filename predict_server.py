@@ -1,5 +1,3 @@
-# import os, sys
-# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import grpc, server.predict_pb2, server.predict_pb2_grpc
 from concurrent import futures
 from model.prediction import run_prediction
@@ -7,7 +5,7 @@ from model.prediction import run_prediction
 class PredictionService(server.predict_pb2_grpc.PredictionServiceServicer):
     def Predict(self, request, context):
         # receive the request input and run the prediction
-        results = [run_prediction(input) for input in request.input]
+        results = run_prediction(request.input)
         return server.predict_pb2.PredictResponse(result=results)
 
 def serve():
