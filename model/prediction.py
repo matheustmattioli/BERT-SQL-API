@@ -16,21 +16,28 @@ bert_model = BertModel.from_pretrained(bert_model_name)
 model = BertTextCNNClassifier(bert_model, num_filters, filter_sizes, output_size)
 model.load_state_dict(torch.load('./artifact/bert_textcnn_classifier.pth', map_location=torch.device(device_type)))
 model.to(device)
+# Warming up the model
+dummy_input = torch.zeros(1, 128).long().to(device)
+dummy_mask = torch.ones(1, 128).long().to(device)
+with torch.no_grad():
+    _ = model(dummy_input, dummy_mask)
 model.eval()
 
-def run_prediction(input):
+def run_prediction(input_list):
     # Receive the input and preprocess it
-    input_text = input
     preprocessor = PreProcess()
-
-    input_preprocessed = preprocessor.decode_sql(input_text)    
-    input_preprocessed = preprocessor.lowercase_sql(input_preprocessed)
-    input_preprocessed = preprocessor.generalize_sql(input_preprocessed)
-    input_preprocessed = preprocessor.tokenize_sql(input_preprocessed)
+    
+    input_preprocessed_list = []
+    for input_text in input_list:
+        input_preprocessed = preprocessor.decode_sql(input_text)    
+        input_preprocessed = preprocessor.lowercase_sql(input_preprocessed)
+        input_preprocessed = preprocessor.generalize_sql(input_preprocessed)
+        input_preprocessed = preprocessor.tokenize_sql(input_preprocessed)
+        input_preprocessed_list.append(input_preprocessed)
 
     # Tokenize the input
     encoding = tokenizer(
-        input_preprocessed,
+        input_preprocessed_list,
         truncation=True,
         padding='max_length',
         max_length=128,  # Using the same max_length as in training
@@ -43,9 +50,9 @@ def run_prediction(input):
     # Classify the input
     with torch.no_grad():
         logits = model(input_ids, attention_mask)
-        prediction = torch.argmax(logits, dim=1).item()
+        predictions = torch.argmax(logits, dim=1).cpu().numpy().tolist()
 
     # Return the prediction
-    prediction = 'SQL Injection' if prediction == 1 else 'No SQL Injection'
+    predictions = ['SQL Injection' if p == 1 else 'No SQL Injection' for p in predictions]
 
-    return prediction
+    return predictions
