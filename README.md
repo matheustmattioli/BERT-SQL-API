@@ -4,6 +4,8 @@ Doing a simple api with flask and BERT model for the SQL Injection Dataset https
 
 Model code is based on https://www.kaggle.com/code/bobaaayoung/bert-word2vec-lstm-cnn-text-classification-ipynb.
 
+This model is part of a kong api gateway plugin solution for detecting offensive requests: https://github.com/mateuslima90/kong-plugin-ai-attack-detection
+
 ## How to use 
 
 Download the model weights and save it in ```bert-sql-api/artifact/```. The steps are
